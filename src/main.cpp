@@ -18,7 +18,6 @@ using namespace DPI;
 
 void printApplicationInfo(const ParsedPacket& pkt) {
 
-    // Nothing to inspect
     if (pkt.payload_length == 0 || pkt.payload_data == nullptr) {
         return;
     }
@@ -71,16 +70,15 @@ void printApplicationInfo(const ParsedPacket& pkt) {
             std::cout << "  Host:     Not found\n";
         }
 
-
         // Detect HTTP method
         const char* methods[] = {
             "GET ",
-            "POST",
+            "POST ",
             "PUT ",
-            "HEAD",
-            "DELE",
-            "PATC",
-            "OPTI"
+            "HEAD ",
+            "DELETE ",
+            "PATCH ",
+            "OPTIONS "
         };
 
         for (const char* method : methods) {
@@ -96,9 +94,9 @@ void printApplicationInfo(const ParsedPacket& pkt) {
 
                 std::string method_name(method);
 
-                // Remove trailing space if present
                 if (!method_name.empty() &&
                     method_name.back() == ' ') {
+
                     method_name.pop_back();
                 }
 
@@ -119,7 +117,7 @@ void printApplicationInfo(const ParsedPacket& pkt) {
     // ------------------------------------------------------------------------
 
     if (pkt.has_udp &&
-        (pkt.src_port == 53 || pkt.dst_port == 53) &&
+        (pkt.src_port == 53 || pkt.dest_port == 53) &&
         DNSExtractor::isDNSQuery(payload, length)) {
 
         std::cout << "  Protocol: DNS\n";
@@ -140,7 +138,7 @@ void printApplicationInfo(const ParsedPacket& pkt) {
 
 
     // ------------------------------------------------------------------------
-    // Unknown application protocol
+    // Unknown
     // ------------------------------------------------------------------------
 
     std::cout << "  Protocol: Unknown\n";
@@ -156,7 +154,6 @@ void printPacketSummary(
     int packet_num
 ) {
 
-    // Format timestamp
     std::time_t time = pkt.timestamp_sec;
     std::tm* tm = std::localtime(&time);
 
@@ -176,7 +173,7 @@ void printPacketSummary(
 
 
     // ------------------------------------------------------------------------
-    // Ethernet layer
+    // Ethernet
     // ------------------------------------------------------------------------
 
     std::cout << "\n[Ethernet]\n";
@@ -213,7 +210,7 @@ void printPacketSummary(
 
 
     // ------------------------------------------------------------------------
-    // IP layer
+    // IP
     // ------------------------------------------------------------------------
 
     if (pkt.has_ip) {
@@ -246,7 +243,7 @@ void printPacketSummary(
 
 
     // ------------------------------------------------------------------------
-    // TCP layer
+    // TCP
     // ------------------------------------------------------------------------
 
     if (pkt.has_tcp) {
@@ -281,7 +278,7 @@ void printPacketSummary(
 
 
     // ------------------------------------------------------------------------
-    // UDP layer
+    // UDP
     // ------------------------------------------------------------------------
 
     if (pkt.has_udp) {
@@ -314,8 +311,6 @@ void printPacketSummary(
             << pkt.payload_length
             << " bytes\n";
 
-
-        // Hex preview
         std::cout << "  Preview: ";
 
         size_t preview_len =
@@ -342,9 +337,7 @@ void printPacketSummary(
 
         std::cout << std::dec << "\n";
 
-
-        // NEW:
-        // Application-level protocol analysis
+        // Application-level analysis
         printApplicationInfo(pkt);
     }
 }
@@ -470,8 +463,6 @@ int main(int argc, char* argv[]) {
             parse_errors++;
         }
 
-
-        // Maximum packet limit
         if (max_packets > 0 &&
             packet_count >= max_packets) {
 
