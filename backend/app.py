@@ -16,11 +16,13 @@ from typing import Any
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = BACKEND_DIR / "results"
 BIN_DIR = BACKEND_DIR / "bin"
+FRONTEND_DIST = ROOT / "frontend" / "dist"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 MAX_PACKET_SAMPLES = 250
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -436,3 +438,28 @@ def download_output(analysis_id: str) -> FileResponse:
         metadata = {}
     download_name = metadata.get("output_file_name", f"{analysis_id}_filtered.pcap")
     return FileResponse(output_path, media_type="application/vnd.tcpdump.pcap", filename=download_name)
+
+
+# In production, serve the built React app from this same origin as the API.
+# This keeps /api requests and filtered-PCAP downloads on one host, avoiding
+# a separate frontend API URL and cross-origin configuration. The mount is
+# only enabled when the production frontend build exists.
+if FRONTEND_DIST.is_dir():
+    frontend_assets = FRONTEND_DIST / "assets"
+    if frontend_assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=frontend_assets), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str) -> FileResponse:
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found.")
+
+        dist_root = FRONTEND_DIST.resolve()
+        requested_path = (FRONTEND_DIST / full_path).resolve()
+        if dist_root in requested_path.parents and requested_path.is_file():
+            return FileResponse(requested_path)
+
+        index_path = FRONTEND_DIST / "index.html"
+        if index_path.is_file():
+            return FileResponse(index_path)
+        raise HTTPException(status_code=404, detail="Frontend build not found.")

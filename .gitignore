@@ -19,3 +19,7 @@ backend/analyze-response.json
 .env
 .env.*
 !.env.example
+
+# Local Python cache and compiled DPI binaries
+backend/__pycache__/
+backend/bin/
