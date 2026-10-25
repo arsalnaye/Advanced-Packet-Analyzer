@@ -2,3 +2,20 @@ build/
 *.exe
 *.obj
 *.obj.d
+
+# Local development environments
+**/.venv/
+**/venv/
+**/node_modules/
+
+# Build output and generated analysis files
+frontend/dist/
+backend/bin/*.exe
+backend/results/
+backend/engine-direct.log
+backend/analyze-response.json
+
+# Local environment secrets
+.env
+.env.*
+!.env.example
